@@ -1,6 +1,6 @@
 ---
 name: review-animations
-description: Reviews animation and motion code against a high craft bar. Strict review: flagging is default, approval is earned. Covers easing, duration, springs, gestures, performance, accessibility, and debugging. Includes full standards reference.
+description: "Reviews animation and motion code against a high craft bar. Strict review: flagging is default, approval is earned. Covers easing, duration, springs, gestures, performance, accessibility, and debugging. Includes full standards reference."
 origin: adapted from emilkowalski/skills
 ---
 

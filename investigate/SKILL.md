@@ -1,6 +1,6 @@
 ---
 name: investigate
-description: Systematic debugging with root cause investigation. Iron Law: no fixes without root cause.
+description: "Systematic debugging with root cause investigation. Iron Law: no fixes without root cause."
 origin: adapted from gstack
 ---
 

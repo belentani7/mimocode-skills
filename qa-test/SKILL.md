@@ -1,6 +1,6 @@
 ---
 name: qa-test
-description: Systematically QA test a web application and fix bugs found. Three tiers: Quick, Standard, Exhaustive.
+description: "Systematically QA test a web application and fix bugs found. Three tiers: Quick, Standard, Exhaustive."
 origin: adapted from gstack
 ---
 
