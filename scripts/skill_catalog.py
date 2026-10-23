@@ -111,11 +111,18 @@ def install_one(skill: Skill, destination: Path, dry_run: bool = False) -> Path:
     validate_contents(skill.path)
     if dry_run:
         return target
+    # Record expected bytes before copying: a changed or malicious staging
+    # tree must never be published as an installed skill.
+    expected = file_manifest(skill.path)
     destination.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=".mimocode-stage-", dir=destination))
     try:
         staging = temporary / skill.name
-        shutil.copytree(skill.path, staging, symlinks=False)
+        # Preserve symlinks as links in staging rather than following them;
+        # the manifest validation below then rejects any newly introduced link.
+        shutil.copytree(skill.path, staging, symlinks=True)
+        if file_manifest(staging) != expected:
+            raise SkillError(f"skill changed during installation: {skill.name}")
         if target.exists() or target.is_symlink():
             raise SkillError(f"destination appeared during install: {target}")
         staging.rename(target)
