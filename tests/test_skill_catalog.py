@@ -82,5 +82,48 @@ class TestSkillCatalog(unittest.TestCase):
         self.assertFalse(self.target.exists())
 
 
+    def test_verify_matches_installed_files_and_detects_edits(self):
+        item = catalog.inventory(self.sources)[0]
+        out = catalog.install_one(item, self.target)
+        self.assertEqual(catalog.verify_one(item, self.target), out)
+        (out / "SKILL.md").write_text("edited", encoding="utf-8")
+        with self.assertRaisesRegex(catalog.SkillError, "integrity mismatch"):
+            catalog.verify_one(item, self.target)
+
+    def test_verify_rejects_extra_files_and_missing_install(self):
+        item = catalog.inventory(self.sources)[0]
+        with self.assertRaisesRegex(catalog.SkillError, "missing or unsafe"):
+            catalog.verify_one(item, self.target)
+        out = catalog.install_one(item, self.target)
+        (out / "extra.txt").write_text("unexpected", encoding="utf-8")
+        with self.assertRaisesRegex(catalog.SkillError, "integrity mismatch"):
+            catalog.verify_one(item, self.target)
+
+    def test_verify_rejects_installed_symlinks(self):
+        item = catalog.inventory(self.sources)[0]
+        out = catalog.install_one(item, self.target)
+        try:
+            (out / "shortcut").symlink_to(out / "SKILL.md")
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks unavailable")
+        with self.assertRaisesRegex(catalog.SkillError, "unsafe skill entry"):
+            catalog.verify_one(item, self.target)
+
+    def test_verify_cli_is_read_only_and_returns_nonzero_on_mismatch(self):
+        from contextlib import redirect_stdout
+        from io import StringIO
+        from unittest.mock import patch
+        item = catalog.inventory(self.sources)[0]
+        out = catalog.install_one(item, self.target)
+        with patch.object(catalog, "inventory", return_value=[item]):
+            with redirect_stdout(StringIO()) as output:
+                self.assertEqual(catalog.main(["--verify", item.name, "--dest", str(self.target)]), 0)
+            self.assertIn("verified ", output.getvalue())
+            (out / "SKILL.md").write_text("modified", encoding="utf-8")
+            with redirect_stdout(StringIO()):
+                self.assertEqual(catalog.main(["--verify", item.name, "--dest", str(self.target)]), 1)
+        self.assertEqual((out / "SKILL.md").read_text(encoding="utf-8"), "modified")
+
+
 if __name__ == "__main__":
     unittest.main()
