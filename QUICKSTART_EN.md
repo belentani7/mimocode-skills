@@ -9,9 +9,10 @@ python scripts/skill_catalog.py --list
 python scripts/skill_catalog.py --search design --json
 python scripts/skill_catalog.py --install design-engineering code-review --dest ~/.codex/skills --dry-run
 python scripts/skill_catalog.py --install design-engineering code-review --dest ~/.codex/skills
+python scripts/skill_catalog.py --verify design-engineering code-review --dest ~/.codex/skills
 ```
 
-The install tool runs **offline**, never executes downloaded skills, rejects symlinks and special files, prechecks collisions, and stages each folder before placing it in the chosen directory. It does not resolve concurrent installers or automatically update existing skills. Review third-party instructions before granting an AI agent filesystem, terminal, or network permissions. Replace `~/.codex/skills` with the path supported by your agent; install paths are not universal.
+The install tool runs **offline**, never executes downloaded skills, rejects symlinks and special files, prechecks collisions, and stages each folder before placing it in the chosen directory. The `--verify` command checks installed files against bundled SHA-256 content, rejects extra or missing files and symlinks, and makes no changes. Verification confirms file equality to this checkout, **not** the upstream publisher's trustworthiness or signature. It does not resolve concurrent installers or automatically update existing skills. Review third-party instructions before granting an AI agent filesystem, terminal, or network permissions. Replace `~/.codex/skills` with the path supported by your agent; install paths are not universal.
 
 For the repository itself:
 
