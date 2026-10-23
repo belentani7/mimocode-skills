@@ -7,6 +7,7 @@ No code from a skill is ever executed. Existing destinations are preserved.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -77,6 +78,32 @@ def validate_contents(folder: Path) -> None:
                 raise SkillError(f"unsafe skill entry: {entry}")
 
 
+
+def file_manifest(folder: Path) -> dict[str, str]:
+    """Read-only content inventory; reject missing directories and symlinks."""
+    if folder.is_symlink() or not folder.is_dir():
+        raise SkillError(f"missing or unsafe skill directory: {folder}")
+    validate_contents(folder)
+    result = {}
+    for parent, _, files in os.walk(folder, followlinks=False):
+        for name in files:
+            path = Path(parent) / name
+            digest = hashlib.sha256()
+            with path.open("rb") as stream:
+                for block in iter(lambda: stream.read(65536), b""):
+                    digest.update(block)
+            result[path.relative_to(folder).as_posix()] = digest.hexdigest()
+    return result
+
+
+def verify_one(skill: Skill, destination: Path) -> Path:
+    """Compare exact installed files to source without modifying either tree."""
+    target = destination / skill.name
+    if file_manifest(skill.path) != file_manifest(target):
+        raise SkillError(f"integrity mismatch for {skill.name}: {target}")
+    return target
+
+
 def install_one(skill: Skill, destination: Path, dry_run: bool = False) -> Path:
     target = destination / skill.name
     if target.exists() or target.is_symlink():
@@ -103,13 +130,14 @@ def main(argv: list[str] | None = None) -> int:
     actions.add_argument("--list", action="store_true", help="List the skills actually present")
     actions.add_argument("--search", metavar="WORDS", help="Search skill names and descriptions")
     actions.add_argument("--install", nargs="+", metavar="SKILL", help="Install selected skills by folder name")
+    actions.add_argument("--verify", nargs="+", metavar="SKILL", help="Check installed files match bundled sources without writing")
     parser.add_argument("--dest", type=Path, help="Target skills directory for --install")
     parser.add_argument("--dry-run", action="store_true", help="Validate installation without writing")
     parser.add_argument("--json", action="store_true", help="JSON results for --list or --search")
     args = parser.parse_args(argv)
     try:
         skills = inventory()
-        if args.install is None:
+        if args.install is None and args.verify is None:
             selected = skills if args.list else [
                 skill for skill in skills
                 if args.search.casefold() in (skill.name + " " + skill.description).casefold()
@@ -122,16 +150,23 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.dest is None:
-            raise SkillError("--install requires an explicit --dest folder")
-        if len(set(args.install)) != len(args.install):
+            raise SkillError("--install/--verify requires an explicit --dest folder")
+        requested = args.install if args.install is not None else args.verify
+        if len(set(requested)) != len(requested):
             raise SkillError("duplicate skill names in request")
         catalog = {s.name: s for s in skills}
-        unknown = [name for name in args.install if name not in catalog]
+        unknown = [name for name in requested if name not in catalog]
         if unknown:
             raise SkillError("unknown skill(s): " + ", ".join(unknown))
         destination = args.dest.expanduser().resolve()
         if destination.exists() and not destination.is_dir():
             raise SkillError(f"not a directory: {destination}")
+        if args.verify is not None:
+            if args.dry_run:
+                raise SkillError("--dry-run is only supported with --install")
+            for name in requested:
+                print("verified " + str(verify_one(catalog[name], destination)))
+            return 0
         # Validate the entire request BEFORE installing any part of it.
         for name in args.install:
             skill = catalog[name]
