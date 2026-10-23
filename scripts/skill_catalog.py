@@ -45,10 +45,10 @@ def summary(path: Path) -> str:
         raise SkillError(f"{path}: missing closing frontmatter delimiter")
     # Full YAML validation remains covered by the existing PyYAML test suite.
     # For search we do not need to parse any embedded YAML code or tags.
-    match = re.search(r"^description:\\s*(.*)$", parts[0], re.MULTILINE)
+    match = re.search(r"^description:\s*(.*)$", parts[0], re.MULTILINE)
     if not match:
         raise SkillError(f"{path}: no description field")
-    value = match.group(1).strip().strip("'\\"")
+    value = match.group(1).strip().strip("\"'")
     if not value or value in {">", "|", ">-", "|-"}:
         return parts[1].lstrip().splitlines()[0][:160] or "(no summary)"
     return value[:160]
