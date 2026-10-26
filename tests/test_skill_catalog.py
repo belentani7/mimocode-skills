@@ -57,7 +57,7 @@ class TestSkillCatalog(unittest.TestCase):
         sibling = self.sources / "other-skill"
         sibling.mkdir()
         (sibling / "SKILL.md").write_text(
-            "---\\nname: other-skill\\ndescription: Other\\n---\\n",
+            chr(10).join(["---", "name: other-skill", "description: Other", "---", ""]),
             encoding="utf-8",
         )
         selected, other = catalog.inventory(self.sources)
