@@ -43,6 +43,15 @@ class TestSkillCatalog(unittest.TestCase):
         self.assertEqual(result, self.target / item.name)
         self.assertFalse(self.target.exists())
 
+    def test_nested_destination_is_rejected_without_side_effects(self):
+        item = catalog.inventory(self.sources)[0]
+        nested = self.skill / "nested" / "skills"
+        for dry_run in (False, True):
+            with self.subTest(dry_run=dry_run):
+                with self.assertRaisesRegex(catalog.SkillError, "inside source skill"):
+                    catalog.install_one(item, nested, dry_run=dry_run)
+                self.assertFalse(nested.exists())
+
     def test_install_preserves_nested_files_and_rejects_overwrite(self):
         (self.skill / "references").mkdir()
         (self.skill / "references" / "guide.txt").write_text("original", encoding="utf-8")
