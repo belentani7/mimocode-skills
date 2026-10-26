@@ -70,7 +70,20 @@
 
 ---
 
-## Быстрый старт
+## Проверяемый локальный каталог / Verified local catalog
+
+Теперь в репозитории есть CLI на Python 3.10+ для поиска и выборочной установки действительно существующих навыков. Он не запускает инструкции навыков, не использует интернет и не перезаписывает существующие папки.
+
+```bash
+python scripts/skill_catalog.py --list
+python scripts/skill_catalog.py --search design --json
+python scripts/skill_catalog.py --install design-engineering code-review --dest ~/.codex/skills --dry-run
+python scripts/skill_catalog.py --install design-engineering code-review --dest ~/.codex/skills
+```
+
+Проверка frontmatter и локальной установки: `python -m pip install 'PyYAML>=6,<7'`, затем `python -m unittest discover -s tests -p 'test_*.py' -v`. Для разных AI-ассистентов директория skills может отличаться. Не выполняйте команды из сторонних skill-файлов без проверки источника и разрешений.
+
+## Быстрый старт (ручная установка)
 
 ### Вариант 1: Клонировать целиком
 

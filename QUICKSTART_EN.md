@@ -1,6 +1,27 @@
 # Quick Start - MiMoCode Skills
 
-## Installation
+## Safe offline catalog and selective installation
+
+This repository stores 35 `SKILL.md` directories at its **root**, not in a nested `skills/` folder. Use the bundled Python 3.10+ tool to inspect/search and copy exactly the skills you need without overwriting an existing installation:
+
+```bash
+python scripts/skill_catalog.py --list
+python scripts/skill_catalog.py --search design --json
+python scripts/skill_catalog.py --install design-engineering code-review --dest ~/.codex/skills --dry-run
+python scripts/skill_catalog.py --install design-engineering code-review --dest ~/.codex/skills
+python scripts/skill_catalog.py --verify design-engineering code-review --dest ~/.codex/skills
+```
+
+The install tool runs **offline**, never executes downloaded skills, rejects symlinks and special files, prechecks collisions, and stages each folder before placing it in the chosen directory. The `--verify` command checks installed files against bundled SHA-256 content, rejects extra or missing files and symlinks, and makes no changes. Verification confirms file equality to this checkout, **not** the upstream publisher's trustworthiness or signature. It does not resolve concurrent installers or automatically update existing skills. Review third-party instructions before granting an AI agent filesystem, terminal, or network permissions. Replace `~/.codex/skills` with the path supported by your agent; install paths are not universal.
+
+For the repository itself:
+
+```bash
+python -m pip install 'PyYAML>=6,<7'
+python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+## Legacy manual installation examples
 
 ### Option 1: Clone entirely (recommended)
 
