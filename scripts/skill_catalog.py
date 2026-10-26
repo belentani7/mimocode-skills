@@ -104,7 +104,22 @@ def verify_one(skill: Skill, destination: Path) -> Path:
     return target
 
 
+def ensure_destination_outside_skill(skill: Skill, destination: Path) -> None:
+    """Avoid recursive copies when the install path lives inside a source skill.
+
+    Resolve existing symlinks in parent directories too; otherwise a seemingly
+    external destination can point back into the source tree.
+    """
+    source = skill.path.resolve(strict=True)
+    target_root = destination.expanduser().resolve()
+    if target_root == source or source in target_root.parents:
+        raise SkillError(
+            f"destination is inside source skill {skill.name}: {target_root}"
+        )
+
+
 def install_one(skill: Skill, destination: Path, dry_run: bool = False) -> Path:
+    ensure_destination_outside_skill(skill, destination)
     target = destination / skill.name
     if target.exists() or target.is_symlink():
         raise SkillError(f"destination already contains {skill.name}: {target}")
@@ -174,6 +189,11 @@ def main(argv: list[str] | None = None) -> int:
             for name in requested:
                 print("verified " + str(verify_one(catalog[name], destination)))
             return 0
+        # Reject destinations nested inside ANY catalog skill, not only selected
+        # ones: installing into a sibling source would contaminate that source.
+        # Preflight all checks before creating or copying any directories.
+        for skill in skills:
+            ensure_destination_outside_skill(skill, destination)
         # Validate the entire request BEFORE installing any part of it.
         for name in args.install:
             skill = catalog[name]
