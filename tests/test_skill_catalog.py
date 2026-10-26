@@ -52,6 +52,21 @@ class TestSkillCatalog(unittest.TestCase):
                     catalog.install_one(item, nested, dry_run=dry_run)
                 self.assertFalse(nested.exists())
 
+    def test_cli_rejects_destination_inside_other_catalog_skill(self):
+        from unittest.mock import patch
+        sibling = self.sources / "other-skill"
+        sibling.mkdir()
+        (sibling / "SKILL.md").write_text(
+            "---\\nname: other-skill\\ndescription: Other\\n---\\n",
+            encoding="utf-8",
+        )
+        selected, other = catalog.inventory(self.sources)
+        destination = other.path / "nested"
+        with patch.object(catalog, "inventory", return_value=[selected, other]):
+            result = catalog.main(["--install", selected.name, "--dest", str(destination)])
+        self.assertEqual(result, 1)
+        self.assertFalse(destination.exists())
+
     def test_install_preserves_nested_files_and_rejects_overwrite(self):
         (self.skill / "references").mkdir()
         (self.skill / "references" / "guide.txt").write_text("original", encoding="utf-8")
